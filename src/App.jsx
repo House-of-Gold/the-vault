@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Login from "./Login";
+import Login from "./screens/Login";
 import { supabase } from "./lib/supabaseClient";
 
 const App = () => {
