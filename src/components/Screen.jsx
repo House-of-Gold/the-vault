@@ -11,7 +11,10 @@ const Screen = ({ title, children }) => {
 
   return (
     <div>
-      <p>The Vault</p>
+      <div className="logo">
+        <p>The Vault</p>
+        <p>House of Gold</p>
+      </div>
       <h1>{title}</h1>
       <button onClick={handleLogout}>Log out</button>
       {logoutError ? <p>{logoutError.message}</p> : null}
