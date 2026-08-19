@@ -24,15 +24,17 @@ const Login = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>Email</label>
-      <input type="email" value={email} onChange={storeEmail} />
-      {localError ? <p>{localError.message}</p> : null}
-      <label>Password</label>
-      <input type="password" value={password} onChange={storePassword} />
-      {localError ? <p>{localError.message}</p> : null}
-      <button type="submit">Log-in</button>
-    </form>
+    <div className="wrapper">
+      <form onSubmit={handleSubmit}>
+        <label>Email</label>
+        <input type="email" value={email} onChange={storeEmail} />
+        {localError ? <p>{localError.message}</p> : null}
+        <label>Password</label>
+        <input type="password" value={password} onChange={storePassword} />
+        {localError ? <p>{localError.message}</p> : null}
+        <button type="submit">Log-in</button>
+      </form>
+    </div>
   );
 };
 
