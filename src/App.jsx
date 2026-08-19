@@ -1,13 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import Login from "./Login";
 import { supabase } from "./lib/supabaseClient";
-import useItems from "./hooks/useItems";
 
 const App = () => {
-  const { items, isLoading, error } = useItems();
+  const [session, setSession] = useState(null);
 
-  if (isLoading) return <p>Items are loading...</p>;
-  if (error) return <p>{error.message}</p>;
-  return <pre>{JSON.stringify(items, null, 2)}</pre>;
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+      },
+    );
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  return <>{!session ? <Login /> : <></>}</>;
 };
 
 export default App;

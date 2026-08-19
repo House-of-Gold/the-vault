@@ -187,15 +187,77 @@ Ask these before writing any code. Each one changes the build.
 
 ---
 
-## 9. Skills needed before starting
+# The Vault — Component Plan (v1)
 
-| Requirement                               | Status        |
-| ----------------------------------------- | ------------- |
-| Components, props, lists                  | ✅ Done       |
-| Forms & controlled inputs                 | Week 2, Day 3 |
-| Fetching / async / loading & error states | Week 3        |
-| Routing (list → detail → edit)            | To learn      |
-| Supabase: table, auth, storage, RLS       | ~2-3 weeks    |
-| File upload & image compression           | To learn      |
+Ledjan's map for building v1, component by component. Update this as decisions change.
 
-Realistic estimate: **6-8 weeks** from today to something that can hold real inventory.
+---
+
+### Login.jsx — built
+
+**Responsibility:** Authenticate a user via Supabase Auth.
+**Imports:** `supabase` (from `lib/supabaseClient.js`) — not a prop, a direct import.
+**State:** `email`, `password`, `localError`.
+**Renders:** email input, password input, submit button, error message on failure.
+
+---
+
+### App.jsx
+
+**Responsibility:** Own the session, decide Login vs. the logged-in app.
+**State:** `session` (via `onAuthStateChange` subscription).
+**Renders:** `<Login />` if `session` is `null`. Otherwise, the routed app (Screen-wrapped screens via React Router).
+
+---
+
+### Screen.jsx
+
+**Responsibility:** Shared shell for every logged-in page — logo, title, navigation, logout button. Absorbs the job originally proposed for a separate `AppScreen` — one component, not two.
+**Receives (props):** `title`, `children`.
+**Renders:** logo, header, nav, logout button, then `{children}`.
+
+---
+
+### SearchBar.jsx — built (course project)
+
+**Responsibility:** Capture search text and report it upward.
+**Receives (props):** `onSearch` (callback).
+**State:** `searchValue`.
+**Renders:** label, text input.
+
+---
+
+### StockScreen.jsx
+
+**Responsibility:** Show the filtered stock list.
+**Calls directly:** `useItems()` — not received as props; the hook call lives here.
+**State:** `filter` (local, shared with `SearchBar` via `onSearch` callback — no relation to `App.jsx`).
+**Renders:** `<Screen>` wrapping `<SearchBar>` + a grid of item cards (via `<ItemCard>` or similar), count, empty state, loading state, error state + retry button (`refetch` from `useItems`).
+
+---
+
+### ItemDetail.jsx
+
+**Responsibility:** Show full detail for one item.
+**Gets which item:** `useParams()` reading `:id` from the route — same mechanism as the course project.
+**Gets item data:** `useItems()` (or the item list already fetched), finds the match via `.find()`.
+**Role handling:** none needed. `items_view` already returns `cost` as real value or `null` depending on who's logged in — `ItemDetail` just renders whatever arrives. No role check in this component.
+**Renders:** `<Screen>` wrapping photo, name, code, price, `cost` (if present), acquired date, notes. **Mark as Sold** button (both roles, with confirmation step). **Edit** / **Delete** buttons — rendered only if `cost` is present in the data (a proxy for "I'm admin," since only admin's session gets real cost — worth deciding if this is the intended signal or if a cleaner role check is wanted later).
+
+---
+
+### AddItem.jsx
+
+**Responsibility:** Form to create a new item.
+**State:** `values` (one key per column: name, code, price, cost, category, acquired_at, notes, expositor), `errors`, `photoFile` (from file input), `success`.
+**On submit:** validate (name/code/price required, code uniqueness checked against current data or left to the database's own unique constraint + friendly error), compress photo (`browser-image-compression`), upload to `item-photos` bucket, insert row into `items` (not `items_view` — writes go to the real table) with the resulting `photo_path`.
+**Renders:** one input per field, file input for photo, Save button, Discard button, validation errors inline.
+
+---
+
+### Open questions to resolve before/while building
+
+- **Edit.jsx** — same form as AddItem, pre-filled? Or does AddItem.jsx take an optional "editing existing item" mode? Decide before building either.
+- **SoldItems.jsx** — not yet planned. Needs: fetch items where `status = 'sold'`, undo button (sets status back to `in_stock`).
+- **Routing** — `/`, `/item/:id`, `/add`, maybe `/sold`, `*` for 404. Not yet wired in this new project.
+- **Mark as Sold confirmation** — a modal, or a simple two-step button? Not yet designed.
