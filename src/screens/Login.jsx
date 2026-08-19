@@ -16,6 +16,7 @@ const Login = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    //Data is unused - investigate why you wrote it if it's not neede
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,

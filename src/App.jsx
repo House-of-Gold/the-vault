@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Login from "./screens/Login";
 import { supabase } from "./lib/supabaseClient";
+import StockScreen from "./screens/StockScreen";
 
 const App = () => {
   const [session, setSession] = useState(null);
@@ -16,7 +17,17 @@ const App = () => {
     };
   }, []);
 
-  return <>{!session ? <Login /> : <></>}</>;
+  return (
+    <>
+      {!session ? (
+        <Login />
+      ) : (
+        <>
+          <StockScreen />
+        </>
+      )}
+    </>
+  );
 };
 
 export default App;
