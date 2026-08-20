@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { supabase } from "../lib/supabaseClient";
 
 const Screen = ({ title, children }) => {
@@ -16,6 +17,10 @@ const Screen = ({ title, children }) => {
         <p>House of Gold</p>
       </div>
       <h1>{title}</h1>
+      <nav>
+        <Link to="/">Stock</Link>
+        <Link to="/sold">Sold</Link>
+      </nav>
       <button onClick={handleLogout}>Log out</button>
       {logoutError ? <p>{logoutError.message}</p> : null}
       {children}

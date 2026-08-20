@@ -4,13 +4,13 @@ import SearchBar from "../components/SearchBar";
 import ItemCard from "../components/ItemCard";
 import useItems from "../hooks/useItems";
 
-const StockScreen = () => {
+const SoldScreen = () => {
   const { items, isLoading, error, refetch } = useItems();
   const [filter, setFilter] = useState("");
 
-  const inStock = items.filter((item) => item.status === "in_stock");
+  const sold = items.filter((item) => item.status === "sold");
 
-  const filtered = inStock.filter((item) => {
+  const filtered = sold.filter((item) => {
     const search = filter.toLowerCase();
     return (
       item.name.toLowerCase().includes(search) ||
@@ -18,13 +18,13 @@ const StockScreen = () => {
     );
   });
 
-  //Order Items on the list by the last acquired
+  //Order Items on the list by the last sold
   const sorted = [...filtered].sort(
-    (a, b) => new Date(b.acquired_at) - new Date(a.acquired_at),
+    (a, b) => new Date(b.sold_at) - new Date(a.sold_at),
   );
 
   return (
-    <Screen title="Stock">
+    <Screen title="Sold">
       <SearchBar onSearch={setFilter} />
       {isLoading ? <p>Loading...</p> : null}
       {error ? (
@@ -35,7 +35,7 @@ const StockScreen = () => {
       ) : null}
       {!isLoading && !error ? (
         <div>
-          <p>{sorted.length} items in stock</p>
+          <p>{sorted.length} items sold</p>
           {sorted.length === 0 ? (
             <p>No items found</p>
           ) : (
@@ -51,4 +51,4 @@ const StockScreen = () => {
   );
 };
 
-export default StockScreen;
+export default SoldScreen;

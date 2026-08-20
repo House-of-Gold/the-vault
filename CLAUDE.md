@@ -47,8 +47,7 @@ src/
 
 ## Reference docs in this repo
 
-- `vault-v1-requirements.md` — the actual spec. Defer to this over assumptions.
-- `vault-component-plan.md` — Ledjan's own component map. Follow it; flag if a task doesn't fit it cleanly rather than improvising structure.
+- `documentation/vault-v1-requirements.md` — the actual spec, including the component plan (per-component responsibility/state/renders breakdown) as a section within the same file, not a separate document. Defer to this over assumptions; follow the component plan section, and flag if a task doesn't fit it cleanly rather than improvising structure.
 
 ## Current known gaps (do not "helpfully" solve these unprompted)
 

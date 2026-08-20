@@ -189,10 +189,6 @@ Ask these before writing any code. Each one changes the build.
 
 # The Vault — Component Plan (v1)
 
-Ledjan's map for building v1, component by component. Update this as decisions change.
-
----
-
 ### Login.jsx — built
 
 **Responsibility:** Authenticate a user via Supabase Auth.
@@ -206,7 +202,7 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 **Responsibility:** Own the session, decide Login vs. the logged-in app.
 **State:** `session` (via `onAuthStateChange` subscription).
-**Renders:** `<Login />` if `session` is `null`. Otherwise, the routed app (Screen-wrapped screens via React Router).
+**Renders:** `<Login />` if `session` is `null`. Otherwise, `<BrowserRouter>` wrapping `<Routes>`: `/` → `StockScreen`, `/sold` → `SoldScreen`. (`/item/:id`, `/add`, and a `*` 404 route are still pending — see open questions.)
 
 ---
 
@@ -214,7 +210,7 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 **Responsibility:** Shared shell for every logged-in page — logo, title, navigation, logout button. Absorbs the job originally proposed for a separate `AppScreen` — one component, not two.
 **Receives (props):** `title`, `children`.
-**Renders:** logo, header, nav, logout button, then `{children}`.
+**Renders:** logo, header, nav (`<Link>` to `/` labeled "Stock", `<Link>` to `/sold` labeled "Sold"), logout button, then `{children}`.
 
 ---
 
@@ -233,6 +229,15 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 **Calls directly:** `useItems()` — not received as props; the hook call lives here.
 **State:** `filter` (local, shared with `SearchBar` via `onSearch` callback — no relation to `App.jsx`).
 **Renders:** `<Screen>` wrapping `<SearchBar>` + a grid of item cards (via `<ItemCard>` or similar), count, empty state, loading state, error state + retry button (`refetch` from `useItems`).
+
+---
+
+### SoldScreen.jsx
+
+**Responsibility:** Show the filtered list of sold items — same shape as `StockScreen`, no actions live here.
+**Calls directly:** `useItems()` — same as `StockScreen`, not received as props.
+**State:** `filter` (local, shared with its own `SearchBar` via `onSearch` callback), same pattern as `StockScreen`.
+**Renders:** `<Screen>` wrapping `<SearchBar>` + a grid of item cards (via `<ItemCard>`), count ("N items sold"), empty state, loading state, error state + retry button (`refetch` from `useItems`). Sorted by `sold_at` (newest sold first) rather than `acquired_at`. No Sold/Undo action here — item actions live exclusively on `ItemDetail`, once it exists (see open questions).
 
 ---
 
@@ -258,6 +263,5 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 ### Open questions to resolve before/while building
 
 - **Edit.jsx** — same form as AddItem, pre-filled? Or does AddItem.jsx take an optional "editing existing item" mode? Decide before building either.
-- **SoldItems.jsx** — not yet planned. Needs: fetch items where `status = 'sold'`, undo button (sets status back to `in_stock`).
-- **Routing** — `/`, `/item/:id`, `/add`, maybe `/sold`, `*` for 404. Not yet wired in this new project.
+- **Routing** — `/` (`StockScreen`) and `/sold` (`SoldScreen`) are wired. `/item/:id`, `/add`, and a `*` 404 route are still pending — blocked on `ItemDetail.jsx` and `AddItem.jsx` not existing yet.
 - **Mark as Sold confirmation** — a modal, or a simple two-step button? Not yet designed.
