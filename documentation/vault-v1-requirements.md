@@ -243,11 +243,12 @@ Ask these before writing any code. Each one changes the build.
 
 ### ItemDetail.jsx
 
-**Responsibility:** Show full detail for one item.
-**Gets which item:** `useParams()` reading `:id` from the route — same mechanism as the course project.
-**Gets item data:** `useItems()` (or the item list already fetched), finds the match via `.find()`.
-**Role handling:** none needed. `items_view` already returns `cost` as real value or `null` depending on who's logged in — `ItemDetail` just renders whatever arrives. No role check in this component.
-**Renders:** `<Screen>` wrapping photo, name, code, price, `cost` (if present), acquired date, notes. **Mark as Sold** button (both roles, with confirmation step). **Edit** / **Delete** buttons — rendered only if `cost` is present in the data (a proxy for "I'm admin," since only admin's session gets real cost — worth deciding if this is the intended signal or if a cleaner role check is wanted later).
+Responsibility: Show full detail for one item. Receives (props): role ("admin" | "seller" | null, from App.jsx via the route's element). Gets which item: useParams() reading :id from the route — same mechanism as the course project. Gets item data: useItems() (or the item list already fetched), finds the match via .find(). Role handling: real check now — role === "admin" gates Edit/Delete, not a cost-presence proxy. cost itself still arrives correctly masked from items_view regardless (defense in depth: even if this prop were somehow wrong, the database still wouldn't leak cost to a seller — but the UI check should be correct and explicit on its own, not rely on that as a safety net). Renders: <Screen> wrapping photo, name, code, price, cost (if present), acquired date, notes.
+
+Mark as Sold button — shown when status = 'in_stock', both roles, with confirmation step. Backend: RLS policy "Seller can mark item as sold" (admin covered by existing admin UPDATE policy).
+Undo Sale button — shown when status = 'sold', both roles. Backend: RLS policy "Seller can undo a sale."
+Edit / Delete buttons — rendered only if role === "admin".
+This is the only screen where item actions happen — StockScreen and SoldItems are browse-only, both link into here for anything actionable.
 
 ---
 
