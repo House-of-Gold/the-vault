@@ -4,9 +4,11 @@ import Login from "./screens/Login";
 import { supabase } from "./lib/supabaseClient";
 import StockScreen from "./screens/StockScreen";
 import SoldScreen from "./screens/SoldScreen";
+import ItemDetail from "./screens/ItemDetail";
 
 const App = () => {
   const [session, setSession] = useState(null);
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -19,6 +21,27 @@ const App = () => {
     };
   }, []);
 
+  useEffect(() => {
+    async function fetchRole() {
+      if (session) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        if (error) {
+          setRole(null);
+        } else {
+          setRole(data.role);
+        }
+      } else {
+        setRole(null);
+      }
+    }
+    fetchRole();
+  }, [session]);
+
   return (
     <>
       {!session ? (
@@ -28,6 +51,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<StockScreen />} />
             <Route path="/sold" element={<SoldScreen />} />
+            <Route path="/item/:id" element={<ItemDetail role={role} />} />
           </Routes>
         </BrowserRouter>
       )}
