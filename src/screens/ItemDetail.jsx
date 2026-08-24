@@ -118,6 +118,10 @@ const ItemDetail = ({ role }) => {
             )
           ) : null}
 
+          {role === "admin" && item.status === "sold" ? (
+            <p>Sold by: {item.sold_by}</p>
+          ) : null}
+
           {item.status === "sold" ? (
             <button onClick={handleUndoSale}>Undo Sale</button>
           ) : null}
