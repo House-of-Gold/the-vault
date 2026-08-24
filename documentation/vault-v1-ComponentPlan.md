@@ -50,10 +50,9 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 ### ItemDetail.jsx — built, fully understood (Claude Code assisted, explained back line by line)
 
-**Status:** Core complete and verified understood — fetch, photo URL construction (and its two distinct failure modes), Mark as Sold + confirmation with stale-UI timing handled, Undo Sale, role-gated UI (`role === "admin"` for Edit/Delete visibility).
+**Status:** Core complete and verified understood — fetch, photo URL construction (and its two distinct failure modes), Mark as Sold + confirmation with stale-UI timing handled, Undo Sale, role-gated UI (`role === "admin"` for Edit/Delete visibility). Admin-only `sold_price` input in the Mark as Sold confirmation step (pre-filled with `price`, editable via `soldPrice` state) is built; Undo Sale clears `sold_price`/`sold_by` along with `sold_at`. Admin-only `Sold by` and `Sold-Price` display added. `Sold on` / `Acquired` both formatted via `toLocaleString("en-GB")`.
 **Still to build:**
 
-- Admin-specific `sold_price` input in the Mark as Sold confirmation step (pre-filled with `price`, editable) — seller's version stays exactly as-is, unchanged
 - Edit and Delete buttons exist but have no handlers yet
 
 ---
@@ -77,4 +76,3 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 - **Edit.jsx** — same form as AddItem, pre-filled? Or does AddItem.jsx take an optional "editing existing item" mode? Decide before building either.
 - **Routing** — `/` (StockScreen) and `/sold` (SoldScreen) and `/item/:id` (ItemDetail) are wired in `App.jsx`. Still missing: `/add` (once AddItem exists), `/item/:id/edit` (once Edit is decided), `*` for 404.
-- **Mark as Sold confirmation** — built for the seller flow (two-step button). Admin flow still needs the `sold_price` input added to its confirmation step.
