@@ -99,8 +99,10 @@ const ItemDetail = ({ role }) => {
               Cost: {item.cost} {item.currency}
             </p>
           ) : null}
-
-          <p>Acquired: {item.acquired_at}</p>
+          {item.status === "sold" ? (
+            <p>Sold on: {new Date(item.sold_at).toLocaleString("en-GB")}</p>
+          ) : null}
+          <p>Acquired: {new Date(item.acquired_at).toLocaleString("en-GB")}</p>
           <p>Notes: {item.notes}</p>
 
           {actionError ? <p>{actionError.message}</p> : null}
