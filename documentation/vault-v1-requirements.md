@@ -31,6 +31,7 @@ Explicitly **not** building these. They're deferred, not rejected — the schema
 - Reservations, repairs, returns
 - Bulk import/export UI
 - Offline mode
+- **Seller-applied discounts (future idea, 20 Aug):** owner could allow seller to apply a bounded discount (e.g. 0-10%) at time of sale, via "Apply Discount" + "Sold" buttons. Mechanism would extend the existing seller status-transition RLS pattern — add `price` to the allowed-to-change columns, constrained by `new_price >= old_price * 0.9`, rather than requiring exact equality. Not v1.
 
 ---
 
@@ -53,22 +54,25 @@ The schema is deliberately richer than the v1 UI. Adding columns to an empty tab
 
 ### `items`
 
-| Field         | Type          | Notes                                                                                    |
-| ------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| `id`          | uuid          | Primary key, auto-generated                                                              |
-| `code`        | text          | Arlind's own shop code. Unique. Required.                                                |
-| `name`        | text          | Required                                                                                 |
-| `category`    | text          | Nullable in v1 — no UI for it yet, but the column exists                                 |
-| `cost`        | numeric(12,2) | What Arlind paid. **Nullable**, and **admin-only** — hidden from seller accounts via RLS |
-| `price`       | numeric(12,2) | Asking price. Required. Visible to both roles                                            |
-| `currency`    | text          | Fixed to one value in v1 (see open questions)                                            |
-| `status`      | enum          | `in_stock` \| `sold` \| `deleted`. Default `in_stock`                                    |
-| `acquired_at` | date          | When it came in. Defaults to today                                                       |
-| `sold_at`     | timestamptz   | Null until sold                                                                          |
-| `photo_path`  | text          | Path in storage bucket. Nullable                                                         |
-| `notes`       | text          | Free text. Nullable                                                                      |
-| `created_at`  | timestamptz   | Auto                                                                                     |
-| `updated_at`  | timestamptz   | Auto                                                                                     |
+| Field         | Type          | Notes                                                                                                                                                                                                                                                               |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | uuid          | Primary key, auto-generated                                                                                                                                                                                                                                         |
+| `code`        | text          | Arlind's own shop code. Unique. Required.                                                                                                                                                                                                                           |
+| `name`        | text          | Required                                                                                                                                                                                                                                                            |
+| `category`    | text          | Nullable. Plain text, not an enum — Arlind's categories (Rings, Necklaces, Earrings, Bracelets, Brooches, Coins) may change over time; enforced as a guided `<select>` in the UI rather than free typing, so consistency doesn't require a rigid database structure |
+| `cost`        | numeric(12,2) | What Arlind paid. **Nullable**, and **admin-only** — hidden from seller accounts via RLS                                                                                                                                                                            |
+| `price`       | numeric(12,2) | Asking price. Required. Visible to both roles. **Never changes on a status update** — locked by RLS (see seller policies below)                                                                                                                                     |
+| `currency`    | text          | Fixed to one value in v1 (see open questions)                                                                                                                                                                                                                       |
+| `status`      | enum          | `in_stock` \| `sold` \| `deleted`. Default `in_stock`                                                                                                                                                                                                               |
+| `acquired_at` | date          | When it came in. Defaults to today                                                                                                                                                                                                                                  |
+| `sold_at`     | timestamptz   | Null until sold. Auto-set by trigger on the `in_stock → sold` transition                                                                                                                                                                                            |
+| `sold_by`     | uuid          | References `auth.users(id)`. Nullable. Auto-set by trigger to `auth.uid()` on sale, cleared to `null` on undo                                                                                                                                                       |
+| `sold_price`  | numeric       | Nullable. Auto-fills to match `price` via trigger unless the admin explicitly provides a different value at the moment of sale (e.g. an in-person discount) — sellers never set this directly, it's always either the trigger default or an admin override          |
+| `photo_path`  | text          | Path in storage bucket. Nullable                                                                                                                                                                                                                                    |
+| `notes`       | text          | Free text. Nullable                                                                                                                                                                                                                                                 |
+| `expositor`   | smallint      | Required (`NOT NULL`). Which physical display case the item lives in — 1 to 9, enforced by a `CHECK` constraint. Permanent per item (doesn't change once assigned, since expositors group by category, e.g. rubies vs. diamonds)                                    |
+| `created_at`  | timestamptz   | **Required**, defaults to `now()` at the database level — never relies on application code to set it                                                                                                                                                                |
+| `updated_at`  | timestamptz   | **Required**, defaults to `now()` on insert, and auto-refreshed on every update via a database trigger — guaranteed correct regardless of which code path performs the write (app, dashboard, script)                                                               |
 
 ### `profiles` (new — needed to distinguish admin vs. seller)
 
@@ -84,7 +88,22 @@ RLS policies on `items` reference this table to decide what a given logged-in us
 - **Money is `numeric`, never `float`.** Floats lose cents. This is not negotiable in an app about gold.
 - **`status` is an enum, not a boolean.** `reserved`, `returned`, `repair` cost nothing to add later if the column is already an enum.
 - **Nothing is ever hard-deleted.** "Delete" sets `status = 'deleted'` and the row stays. A deleted item disappears from the UI and nowhere else.
-- `sold_at` is set when status becomes `sold`. Together with `acquired_at` and `cost`/`price`, this means every report you might ever want is already answerable from the data — even though v1 shows none of them.
+- `sold_at`/`sold_by`/`sold_price` are all set when status becomes `sold`. Together with `acquired_at` and `cost`/`price`, this means every report you might ever want is already answerable from the data — even though v1 shows none of them.
+
+**RLS policies on `items` (built and tested 14–20 Aug):**
+
+- **SELECT** — any authenticated user (admin or seller)
+- **INSERT / UPDATE / DELETE** — admin only (full access to every column)
+- **Seller: Mark as Sold** — allowed only if the row's current status is `in_stock`, transitioning to `sold`, with every other column identical to the existing row (verified against the live table, not the request's claimed values) — prevents a seller from smuggling a price/cost change into a status update. Tested against a real fraud scenario (status + price changed together) and confirmed rejected.
+- **Seller: Undo Sale** — mirror policy, `sold → in_stock`, same column-locking.
+- **`profiles`** — SELECT restricted to the caller's own row (`id = auth.uid()`) — a seller cannot enumerate other accounts.
+- **`items_view`** (see below) — `cost` masked to `NULL` for non-admin sessions, real value for admin. Verified both directions via faked sessions.
+
+**Database trigger (`set_updated_at`, on every `items` UPDATE):**
+
+- Always refreshes `updated_at`
+- On a genuine `in_stock → sold` transition: sets `sold_at`, `sold_by` (via `auth.uid()`), and `sold_price` (defaults to `price` unless already provided in the same request — this is how an admin's discount override works)
+- On `sold → in_stock`: clears `sold_by`
 
 ### Storage
 
@@ -113,16 +132,17 @@ One bucket for item photos. One photo per item in v1 (the column is a single pat
 ### 5.3 Item detail
 
 - Full-size photo, name, code, price, acquired date, notes (both roles). `cost` shown to admin only
-- Actions: **Mark as sold** (both roles), **Edit**, **Delete** (admin only)
-- **Mark as sold** requires a confirmation step — it's a one-tap action with real consequences
+- Actions: **Mark as sold** (both roles, different UI per role — see below), **Undo Sale** (both roles), **Edit**, **Delete** (admin only)
+- **Mark as sold — seller:** one-tap confirmation, no price input. `sold_price` auto-fills to match `price`.
+- **Mark as sold — admin:** confirmation step includes a `sold_price` field, pre-filled with the listed `price`, editable — covers the real workflow where Arlind negotiates a final price with a client, including remotely approving a sale the seller is handling in-store.
 - After marking sold, the item leaves the stock list
 
 ### 5.4 Add item — admin only
 
-- Fields: photo, name, code, price, acquired date (defaults to today), notes
-- Optional in the form if Arlind wants them: cost, category
+- Fields: photo, name, code, price, acquired date (defaults to today), notes, expositor (1-9, required, `<select>`)
+- Optional in the form if Arlind wants them: cost, category (category is a guided `<select>` from his real category list, not free text)
 - Photo taken directly from phone camera or chosen from gallery
-- Validation: name, code and price required; code must be unique — with a clear error if it isn't
+- Validation: name, code, price, and expositor required; code must be unique — with a clear error if it isn't
 - Client-side image compression before upload (shop wifi is not a data center)
 
 ### 5.5 Edit item — admin only
@@ -187,82 +207,15 @@ Ask these before writing any code. Each one changes the build.
 
 ---
 
-# The Vault — Component Plan (v1)
+## 9. Skills needed before starting
 
-### Login.jsx — built
+| Requirement                               | Status        |
+| ----------------------------------------- | ------------- |
+| Components, props, lists                  | ✅ Done       |
+| Forms & controlled inputs                 | Week 2, Day 3 |
+| Fetching / async / loading & error states | Week 3        |
+| Routing (list → detail → edit)            | To learn      |
+| Supabase: table, auth, storage, RLS       | ~2-3 weeks    |
+| File upload & image compression           | To learn      |
 
-**Responsibility:** Authenticate a user via Supabase Auth.
-**Imports:** `supabase` (from `lib/supabaseClient.js`) — not a prop, a direct import.
-**State:** `email`, `password`, `localError`.
-**Renders:** email input, password input, submit button, error message on failure.
-
----
-
-### App.jsx
-
-**Responsibility:** Own the session, decide Login vs. the logged-in app.
-**State:** `session` (via `onAuthStateChange` subscription).
-**Renders:** `<Login />` if `session` is `null`. Otherwise, `<BrowserRouter>` wrapping `<Routes>`: `/` → `StockScreen`, `/sold` → `SoldScreen`. (`/item/:id`, `/add`, and a `*` 404 route are still pending — see open questions.)
-
----
-
-### Screen.jsx
-
-**Responsibility:** Shared shell for every logged-in page — logo, title, navigation, logout button. Absorbs the job originally proposed for a separate `AppScreen` — one component, not two.
-**Receives (props):** `title`, `children`.
-**Renders:** logo, header, nav (`<Link>` to `/` labeled "Stock", `<Link>` to `/sold` labeled "Sold"), logout button, then `{children}`.
-
----
-
-### SearchBar.jsx — built (course project)
-
-**Responsibility:** Capture search text and report it upward.
-**Receives (props):** `onSearch` (callback).
-**State:** `searchValue`.
-**Renders:** label, text input.
-
----
-
-### StockScreen.jsx
-
-**Responsibility:** Show the filtered stock list.
-**Calls directly:** `useItems()` — not received as props; the hook call lives here.
-**State:** `filter` (local, shared with `SearchBar` via `onSearch` callback — no relation to `App.jsx`).
-**Renders:** `<Screen>` wrapping `<SearchBar>` + a grid of item cards (via `<ItemCard>` or similar), count, empty state, loading state, error state + retry button (`refetch` from `useItems`).
-
----
-
-### SoldScreen.jsx
-
-**Responsibility:** Show the filtered list of sold items — same shape as `StockScreen`, no actions live here.
-**Calls directly:** `useItems()` — same as `StockScreen`, not received as props.
-**State:** `filter` (local, shared with its own `SearchBar` via `onSearch` callback), same pattern as `StockScreen`.
-**Renders:** `<Screen>` wrapping `<SearchBar>` + a grid of item cards (via `<ItemCard>`), count ("N items sold"), empty state, loading state, error state + retry button (`refetch` from `useItems`). Sorted by `sold_at` (newest sold first) rather than `acquired_at`. No Sold/Undo action here — item actions live exclusively on `ItemDetail`, once it exists (see open questions).
-
----
-
-### ItemDetail.jsx
-
-Responsibility: Show full detail for one item. Receives (props): role ("admin" | "seller" | null, from App.jsx via the route's element). Gets which item: useParams() reading :id from the route — same mechanism as the course project. Gets item data: useItems() (or the item list already fetched), finds the match via .find(). Role handling: real check now — role === "admin" gates Edit/Delete, not a cost-presence proxy. cost itself still arrives correctly masked from items_view regardless (defense in depth: even if this prop were somehow wrong, the database still wouldn't leak cost to a seller — but the UI check should be correct and explicit on its own, not rely on that as a safety net). Renders: <Screen> wrapping photo, name, code, price, cost (if present), acquired date, notes.
-
-Mark as Sold button — shown when status = 'in_stock', both roles, with confirmation step. Backend: RLS policy "Seller can mark item as sold" (admin covered by existing admin UPDATE policy).
-Undo Sale button — shown when status = 'sold', both roles. Backend: RLS policy "Seller can undo a sale."
-Edit / Delete buttons — rendered only if role === "admin".
-This is the only screen where item actions happen — StockScreen and SoldItems are browse-only, both link into here for anything actionable.
-
----
-
-### AddItem.jsx
-
-**Responsibility:** Form to create a new item.
-**State:** `values` (one key per column: name, code, price, cost, category, acquired_at, notes, expositor), `errors`, `photoFile` (from file input), `success`.
-**On submit:** validate (name/code/price required, code uniqueness checked against current data or left to the database's own unique constraint + friendly error), compress photo (`browser-image-compression`), upload to `item-photos` bucket, insert row into `items` (not `items_view` — writes go to the real table) with the resulting `photo_path`.
-**Renders:** one input per field, file input for photo, Save button, Discard button, validation errors inline.
-
----
-
-### Open questions to resolve before/while building
-
-- **Edit.jsx** — same form as AddItem, pre-filled? Or does AddItem.jsx take an optional "editing existing item" mode? Decide before building either.
-- **Routing** — `/` (`StockScreen`) and `/sold` (`SoldScreen`) are wired. `/item/:id`, `/add`, and a `*` 404 route are still pending — blocked on `ItemDetail.jsx` and `AddItem.jsx` not existing yet.
-- **Mark as Sold confirmation** — a modal, or a simple two-step button? Not yet designed.
+Realistic estimate: **6-8 weeks** from today to something that can hold real inventory.
