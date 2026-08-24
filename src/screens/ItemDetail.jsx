@@ -73,6 +73,7 @@ const ItemDetail = ({ role }) => {
           {photoUrl ? <img src={photoUrl} alt={item.name} /> : null}
           <p>{item.name}</p>
           <p>{item.code}</p>
+          <p>Category: {item.category}</p>
           <p>
             Price: {item.price} {item.currency}
           </p>
@@ -104,6 +105,7 @@ const ItemDetail = ({ role }) => {
           ) : null}
           <p>Acquired: {new Date(item.acquired_at).toLocaleString("en-GB")}</p>
           <p>Notes: {item.notes}</p>
+          <p>Expositor: {item.expositor}</p>
 
           {actionError ? <p>{actionError.message}</p> : null}
 
