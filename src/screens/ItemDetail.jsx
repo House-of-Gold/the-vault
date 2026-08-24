@@ -9,6 +9,7 @@ const ItemDetail = ({ role }) => {
   const { items, isLoading, error, refetch } = useItems();
   const [confirmingSale, setConfirmingSale] = useState(false);
   const [actionError, setActionError] = useState(null);
+  const [soldPrice, setSoldPrice] = useState(null);
 
   const item = items.find((item) => item.id === id);
 
@@ -20,7 +21,11 @@ const ItemDetail = ({ role }) => {
   async function handleMarkSold() {
     const { error } = await supabase
       .from("items")
-      .update({ status: "sold", sold_at: new Date().toISOString() })
+      .update({
+        status: "sold",
+        sold_at: new Date().toISOString(),
+        sold_price: soldPrice,
+      })
       .eq("id", item.id);
 
     if (error) {
@@ -34,7 +39,12 @@ const ItemDetail = ({ role }) => {
   async function handleUndoSale() {
     const { error } = await supabase
       .from("items")
-      .update({ status: "in_stock", sold_at: null })
+      .update({
+        status: "in_stock",
+        sold_at: null,
+        sold_price: null,
+        sold_by: null,
+      })
       .eq("id", item.id);
 
     if (error) {
@@ -42,6 +52,10 @@ const ItemDetail = ({ role }) => {
     } else {
       refetch();
     }
+  }
+
+  function getSoldPrice(e) {
+    setSoldPrice(e.target.value);
   }
 
   return (
@@ -60,11 +74,34 @@ const ItemDetail = ({ role }) => {
           <p>{item.name}</p>
           <p>{item.code}</p>
           <p>
-            {item.price} {item.currency}
+            Price: {item.price} {item.currency}
           </p>
-          {item.cost != null ? <p>Cost: {item.cost}</p> : null}
-          <p>{item.acquired_at}</p>
-          <p>{item.notes}</p>
+          {role === "admin" && confirmingSale ? (
+            <div>
+              <label>Sold Price</label>
+              <input
+                type="text"
+                name="sold_price"
+                defaultValue={item.price}
+                onChange={getSoldPrice}
+              />
+            </div>
+          ) : null}
+
+          {item.status === "sold" && role === "admin" ? (
+            <p>
+              Sold-Price: {item.sold_price} {item.currency}
+            </p>
+          ) : null}
+
+          {item.cost != null ? (
+            <p>
+              Cost: {item.cost} {item.currency}
+            </p>
+          ) : null}
+
+          <p>Acquired: {item.acquired_at}</p>
+          <p>Notes: {item.notes}</p>
 
           {actionError ? <p>{actionError.message}</p> : null}
 
