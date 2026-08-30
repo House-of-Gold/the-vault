@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import Screen from "../components/Screen";
 import SearchBar from "../components/SearchBar";
 import ItemCard from "../components/ItemCard";
 import useItems from "../hooks/useItems";
 
-const StockScreen = () => {
+const StockScreen = ({ role }) => {
   const { items, isLoading, error, refetch } = useItems();
   const [filter, setFilter] = useState("");
 
@@ -36,6 +37,7 @@ const StockScreen = () => {
       {!isLoading && !error ? (
         <div>
           <p>{sorted.length} items in stock</p>
+          {role === "admin" ? <Link to="/add">Add Item</Link> : null}
           {sorted.length === 0 ? (
             <p>No items found</p>
           ) : (

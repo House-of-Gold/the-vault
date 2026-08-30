@@ -89,25 +89,30 @@ const ItemDetail = ({ role }) => {
             </div>
           ) : null}
 
-          {item.status === "sold" && role === "admin" ? (
+          {item.status === "sold" ? (
             <p>
               Sold-Price: {item.sold_price} {item.currency}
             </p>
           ) : null}
 
-          {item.cost != null ? (
+          {item.cost != null ? ( // Supabase never disclouses Cost to non-admin role
             <p>
               Cost: {item.cost} {item.currency}
             </p>
           ) : null}
+
           {item.status === "sold" ? (
             <p>Sold on: {new Date(item.sold_at).toLocaleString("en-GB")}</p>
           ) : null}
+
           <p>Acquired: {new Date(item.acquired_at).toLocaleString("en-GB")}</p>
+
           <p>Notes: {item.notes}</p>
+
           <p>Expositor: {item.expositor}</p>
 
           {actionError ? <p>{actionError.message}</p> : null}
+          {/* What error message are we requesting here */}
 
           {item.status === "in_stock" ? (
             confirmingSale ? (
