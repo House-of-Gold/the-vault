@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import imageCompression from "browser-image-compression";
 import Screen from "../components/Screen";
 import { supabase } from "../lib/supabaseClient";
@@ -18,6 +19,7 @@ function todayDate() {
 }
 
 const AddItem = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [price, setPrice] = useState("");
@@ -170,6 +172,8 @@ const AddItem = () => {
         } else {
           setActionError("Network error");
         }
+      } else {
+        navigate("/");
       }
     }
   }
