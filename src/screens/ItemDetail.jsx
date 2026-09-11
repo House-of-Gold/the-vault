@@ -91,7 +91,7 @@ const ItemDetail = ({ role }) => {
           <p>
             Price: {item.price} {item.currency}
           </p>
-          {role === "admin" && confirmingSale ? (
+          {confirmingSale ? (
             <div>
               <label>Sold Price</label>
               <input
