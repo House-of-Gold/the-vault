@@ -70,7 +70,7 @@ const StockScreen = ({ role }) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,216px)] justify-start gap-0">
+            <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,216px)] justify-start gap-0">
               {sorted.map((item) => (
                 <ItemCard key={item.id} item={item} />
               ))}

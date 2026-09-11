@@ -93,7 +93,17 @@ const ItemDetail = ({ role }) => {
       ) : null}
 
       {!isLoading && !error && item ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <>
+          <button
+            onClick={() =>
+              navigate(item.status === "sold" ? "/sold" : "/")
+            }
+            className="inline-flex items-center gap-1.5 text-accent font-heading font-extrabold text-sm mb-4 cursor-pointer"
+          >
+            ← {item.status === "sold" ? "Back to Sold" : "Back to Stock"}
+          </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           <div className="aspect-square bg-neutral-200 border border-divider grid place-items-center overflow-hidden">
             {photoUrl ? (
               <img
@@ -291,6 +301,7 @@ const ItemDetail = ({ role }) => {
             </div>
           </div>
         </div>
+        </>
       ) : null}
     </Screen>
   );
