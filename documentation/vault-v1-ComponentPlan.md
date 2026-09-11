@@ -50,9 +50,10 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 ### ItemDetail.jsx — built, fully understood (Claude Code assisted, explained back line by line)
 
-**Status:** Core complete and verified understood — fetch, photo URL construction (and its two distinct failure modes), Mark as Sold + confirmation with stale-UI timing handled, Undo Sale, role-gated UI (`role === "admin"` for Edit/Delete visibility). Admin-only `sold_price` input in the Mark as Sold confirmation step (pre-filled with `price`, editable via `soldPrice` state) is built; Undo Sale clears `sold_price`/`sold_by` along with `sold_at`. Admin-only `Sold by` and `Sold-Price` display added. `Sold on` / `Acquired` both formatted via `toLocaleString("en-GB")`.
+**Status:** Core complete and verified understood — fetch, photo URL construction (and its two distinct failure modes), Mark as Sold + confirmation with stale-UI timing handled, Undo Sale, role-gated UI (`role === "admin"` for Edit/Delete visibility).
 **Still to build:**
 
+- Admin-specific `sold_price` input in the Mark as Sold confirmation step (pre-filled with `price`, editable) — seller's version stays exactly as-is, unchanged
 - Edit and Delete buttons exist but have no handlers yet
 
 ---
@@ -63,16 +64,23 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 ---
 
-### AddItem.jsx
+### ItemForm.jsx — built, understood (formerly AddItem.jsx, generalized 21 Aug)
 
-**Responsibility:** Form to create a new item.
-**State:** `values` (one key per column: name, code, price, cost, category, acquired_at, notes, expositor), `errors`, `photoFile` (from file input), `success`.
-**On submit:** validate (name/code/price required, code uniqueness checked against current data or left to the database's own unique constraint + friendly error), compress photo (`browser-image-compression`), upload to `item-photos` bucket, insert row into `items` (not `items_view` — writes go to the real table) with the resulting `photo_path`.
-**Renders:** one input per field, file input for photo, Save button, Discard button, validation errors inline.
+**Status:** Add-only version complete and tested end-to-end (validation, warnings, photo compression + upload + insert with proper error handling by Postgres error code, auto-navigate to Stock on success). **Being extended to handle Edit too, rather than a separate EditItem.jsx** — avoids duplicating validation/upload logic that would drift out of sync.
+
+**Shared add/edit design:**
+
+- Receives optional `item` prop (passed directly from `ItemDetail`'s Edit button — legitimate here since Edit is only ever reached via a click from a page that already has the item loaded, unlike `ItemDetail` itself which must handle cold/bookmarked visits)
+- Every field's `useState` uses `item?.field || default` instead of a bare empty string, so the form is blank when adding, pre-filled when editing
+- Photo validation becomes conditional: required only if neither a new `photoFile` nor an existing `item.photo_path` exists — editing doesn't force a re-upload
+- `handleSubmit` branches on `item?.id`: truthy → `.update()` against that id; falsy → `.insert()` (the original add behavior)
+
+**Still to build:** the actual branching logic in `handleSubmit`, the "Edit" button wiring in `ItemDetail` to navigate here with the item, and a route for it (`/item/:id/edit` or similar).
 
 ---
 
 ### Open questions to resolve before/while building
 
-- **Edit.jsx** — same form as AddItem, pre-filled? Or does AddItem.jsx take an optional "editing existing item" mode? Decide before building either.
-- **Routing** — `/` (StockScreen) and `/sold` (SoldScreen) and `/item/:id` (ItemDetail) are wired in `App.jsx`. Still missing: `/add` (once AddItem exists), `/item/:id/edit` (once Edit is decided), `*` for 404.
+- **Routing** — `/`, `/sold`, `/item/:id` are wired. Still missing: `/add`, `/item/:id/edit` (both waiting on ItemForm.jsx's branching logic), `*` for 404.
+- **Mark as Sold confirmation** — built for the seller flow (two-step button). Admin flow still needs the `sold_price` input added to its confirmation step.
+- **Delete** — button exists on `ItemDetail`, no handler yet. Given the soft-delete design (`status = 'deleted'`, never a real row removal), this should be a small, focused addition once `ItemForm.jsx`'s edit branch is done.

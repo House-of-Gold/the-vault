@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import imageCompression from "browser-image-compression";
 import Screen from "../components/Screen";
 import { supabase } from "../lib/supabaseClient";
@@ -18,17 +18,21 @@ function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const AddItem = () => {
+const ItemForm = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState("");
-  const [acquiredAt, setAcquiredAt] = useState(todayDate());
-  const [notes, setNotes] = useState("");
-  const [expositor, setExpositor] = useState("");
-  const [cost, setCost] = useState("");
-  const [category, setCategory] = useState("");
+  const location = useLocation();
+  const item = location.state?.item;
+  const [name, setName] = useState(item?.name || "");
+  const [code, setCode] = useState(item?.code?.replace("HOG-", "") || "");
+  const [price, setPrice] = useState(item?.price || "");
+  const [currency, setCurrency] = useState(item?.currency || "");
+  const [acquiredAt, setAcquiredAt] = useState(
+    item?.acquired_at || todayDate(),
+  );
+  const [notes, setNotes] = useState(item?.notes || "");
+  const [expositor, setExpositor] = useState(item?.expositor || "");
+  const [cost, setCost] = useState(item?.cost || "");
+  const [category, setCategory] = useState(item?.category || "");
   const [photoFile, setPhotoFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [warnings, setWarnings] = useState({});
@@ -115,7 +119,7 @@ const AddItem = () => {
       newErrors.cost = "Cost must be a number";
     }
 
-    if (!photoFile) {
+    if (!photoFile && !item?.photo_path) {
       newErrors.photo = "The photo is required";
     }
 
@@ -140,18 +144,22 @@ const AddItem = () => {
     setWarnings(newWarnings);
 
     if (Object.keys(newErrors).length === 0) {
-      const filePath = `${code}-${Date.now()}`;
+      let filePath = item?.photo_path;
 
-      const { error: uploadError } = await supabase.storage
-        .from("item-photos")
-        .upload(filePath, photoFile);
+      if (photoFile) {
+        filePath = `${code}-${Date.now()}`;
 
-      if (uploadError) {
-        setActionError("Photo upload failed, please try again");
-        return;
+        const { error: uploadError } = await supabase.storage
+          .from("item-photos")
+          .upload(filePath, photoFile);
+
+        if (uploadError) {
+          setActionError("Photo upload failed, please try again");
+          return;
+        }
       }
 
-      const { error } = await supabase.from("items").insert({
+      const itemData = {
         code: `HOG-${code}`,
         name: name,
         price: Number(price),
@@ -162,7 +170,11 @@ const AddItem = () => {
         cost: cost ? Number(cost) : null,
         category: category,
         photo_path: filePath,
-      });
+      };
+
+      const { error } = item?.id
+        ? await supabase.from("items").update(itemData).eq("id", item.id)
+        : await supabase.from("items").insert(itemData);
 
       if (error) {
         if (error.code === "23505") {
@@ -172,6 +184,8 @@ const AddItem = () => {
         } else {
           setActionError("Network error");
         }
+      } else if (item?.id) {
+        navigate(`/item/${item.id}`);
       } else {
         navigate("/");
       }
@@ -179,7 +193,7 @@ const AddItem = () => {
   }
 
   return (
-    <Screen title="Add Item">
+    <Screen title={item?.id ? "Edit Item" : "Add Item"}>
       <form onSubmit={handleSubmit}>
         <label>Name</label>
         <input type="text" value={name} onChange={storeName} />
@@ -194,7 +208,7 @@ const AddItem = () => {
         {errors.price ? <p>{errors.price}</p> : null}
 
         <label>Currency</label>
-        <select onChange={storeCurrency}>
+        <select value={currency} onChange={storeCurrency}>
           <option value="">Choose the currency</option>
           <option value="Euro">Euro</option>
           <option value="Lek">Lek</option>
@@ -244,4 +258,4 @@ const AddItem = () => {
   );
 };
 
-export default AddItem;
+export default ItemForm;

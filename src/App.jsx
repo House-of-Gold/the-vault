@@ -5,7 +5,7 @@ import { supabase } from "./lib/supabaseClient";
 import StockScreen from "./screens/StockScreen";
 import SoldScreen from "./screens/SoldScreen";
 import ItemDetail from "./screens/ItemDetail";
-import AddItem from "./screens/AddItem";
+import ItemForm from "./screens/ItemForm";
 
 const App = () => {
   const [session, setSession] = useState(null);
@@ -53,7 +53,8 @@ const App = () => {
             <Route path="/" element={<StockScreen role={role} />} />
             <Route path="/sold" element={<SoldScreen />} />
             <Route path="/item/:id" element={<ItemDetail role={role} />} />
-            <Route path="/add" element={<AddItem />} />
+            <Route path="/add" element={<ItemForm />} />
+            <Route path="/edit/:id" element={<ItemForm />} />
           </Routes>
         </BrowserRouter>
       )}

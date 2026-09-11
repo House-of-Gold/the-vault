@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import Screen from "../components/Screen";
 import useItems from "../hooks/useItems";
 import { supabase } from "../lib/supabaseClient";
 
 const ItemDetail = ({ role }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { items, isLoading, error, refetch } = useItems();
   const [confirmingSale, setConfirmingSale] = useState(false);
   const [actionError, setActionError] = useState(null);
@@ -51,6 +52,19 @@ const ItemDetail = ({ role }) => {
       setActionError(error);
     } else {
       refetch();
+    }
+  }
+
+  async function handleDelete() {
+    const { error } = await supabase
+      .from("items")
+      .update({ status: "deleted" })
+      .eq("id", item.id);
+
+    if (error) {
+      setActionError(error);
+    } else {
+      navigate("/");
     }
   }
 
@@ -137,8 +151,14 @@ const ItemDetail = ({ role }) => {
 
           {role === "admin" ? (
             <>
-              <button>Edit</button>
-              <button>Delete</button>
+              <button
+                onClick={() =>
+                  navigate(`/edit/${item.id}`, { state: { item } })
+                }
+              >
+                Edit
+              </button>
+              <button onClick={handleDelete}>Delete</button>
             </>
           ) : null}
         </div>
