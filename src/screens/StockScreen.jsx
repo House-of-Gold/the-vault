@@ -70,7 +70,7 @@ const StockScreen = ({ role }) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] gap-px bg-divider border border-divider">
+            <div className="grid grid-cols-[repeat(auto-fill,216px)] justify-start gap-0">
               {sorted.map((item) => (
                 <ItemCard key={item.id} item={item} />
               ))}

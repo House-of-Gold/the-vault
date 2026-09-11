@@ -12,7 +12,7 @@ const ItemCard = ({ item }) => {
   return (
     <Link
       to={`/item/${item.id}`}
-      className="group flex flex-col bg-bg cursor-pointer transition-shadow duration-150 hover:shadow-md"
+      className="group flex flex-col bg-bg border border-divider cursor-pointer transition-shadow duration-150 hover:shadow-md"
     >
       <div className="relative aspect-square bg-neutral-200 grid place-items-center overflow-hidden">
         {photoUrl ? (
