@@ -9,9 +9,15 @@ const SearchBar = ({ onSearch }) => {
   }
 
   return (
-    <div>
-      <label>Search</label>
-      <input type="text" value={searchValue} onChange={storeSearchValue} />
+    <div className="flex flex-col gap-1 sm:max-w-xs">
+      <label className="text-xs text-text/70">Search</label>
+      <input
+        type="text"
+        value={searchValue}
+        onChange={storeSearchValue}
+        placeholder="Name or ID…"
+        className="w-full min-h-9 px-2.5 py-1.5 text-sm text-text bg-surface border border-divider rounded-md caret-accent hover:border-text/45 focus-visible:border-accent focus-visible:outline-none"
+      />
     </div>
   );
 };
