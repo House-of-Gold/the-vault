@@ -96,8 +96,8 @@ const ItemForm = () => {
       newErrors.code = "Code is required";
     } else {
       const digits = code.trim();
-      if (digits.length !== 3 || isNaN(digits)) {
-        newErrors.code = "Code must be 3 numbers";
+      if (digits.length !== 4 || isNaN(digits)) {
+        newErrors.code = "Code must be 4 numbers";
       }
     }
 
@@ -198,8 +198,8 @@ const ItemForm = () => {
   const photoPreviewUrl = photoFile
     ? URL.createObjectURL(photoFile)
     : item?.photo_path
-      ? supabase.storage.from("item-photos").getPublicUrl(item.photo_path)
-          .data.publicUrl
+      ? supabase.storage.from("item-photos").getPublicUrl(item.photo_path).data
+          .publicUrl
       : null;
 
   return (
@@ -289,9 +289,7 @@ const ItemForm = () => {
               <p className="text-accent-700 text-xs">{errors.cost}</p>
             ) : null}
             {warnings.costVsPrice ? (
-              <p className="text-accent-700 text-xs">
-                {warnings.costVsPrice}
-              </p>
+              <p className="text-accent-700 text-xs">{warnings.costVsPrice}</p>
             ) : null}
           </div>
 
