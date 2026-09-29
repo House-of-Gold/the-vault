@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import imageCompression from "browser-image-compression";
 import Screen from "../components/Screen";
 import { supabase } from "../lib/supabaseClient";
+import { buttonVariants, inputClass } from "../styles/themes";
 
 const categories = [
   "Rings",
@@ -192,8 +193,9 @@ const ItemForm = () => {
     }
   }
 
-  const inputClass =
-    "w-full min-h-9 px-2.5 py-1.5 text-sm text-text bg-surface border border-divider rounded-md caret-accent hover:border-text/45 focus-visible:border-accent focus-visible:outline-none";
+  function handleCancel() {
+    navigate("/");
+  }
 
   const photoPreviewUrl = photoFile
     ? URL.createObjectURL(photoFile)
@@ -372,12 +374,14 @@ const ItemForm = () => {
           ) : null}
         </div>
 
-        <button
-          type="submit"
-          className="inline-flex items-center justify-center gap-1.5 font-heading font-extrabold text-sm rounded-md bg-accent text-bg px-3.5 py-2 hover:bg-accent-600 active:bg-accent-700"
-        >
-          Save
-        </button>
+        <div className="flex gap-2">
+          <button type="submit" className={buttonVariants.primary}>
+            Save
+          </button>
+          <button onClick={handleCancel} className={buttonVariants.secondary}>
+            Cancel
+          </button>
+        </div>
 
         {actionError ? (
           <p className="text-accent-700 text-sm mt-3">{actionError}</p>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router";
 import { supabase } from "../lib/supabaseClient";
+import { buttonVariants } from "../styles/themes";
 
 const Screen = ({ title, children }) => {
   const [logoutError, setLogoutError] = useState(null);
@@ -84,10 +85,7 @@ const Screen = ({ title, children }) => {
             {displayName ? (
               <span className="text-sm font-semibold">{displayName}</span>
             ) : null}
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center justify-center gap-1.5 font-heading font-extrabold text-sm rounded-md border border-divider px-3.5 py-2 cursor-pointer hover:bg-text/7 active:bg-text/14"
-            >
+            <button onClick={handleLogout} className={buttonVariants.secondary}>
               Log out
             </button>
           </div>
