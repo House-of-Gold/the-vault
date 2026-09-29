@@ -4,6 +4,7 @@ import Screen from "../components/Screen";
 import SearchBar from "../components/SearchBar";
 import ItemCard from "../components/ItemCard";
 import useItems from "../hooks/useItems";
+import { buttonVariants } from "../styles/themes";
 
 const StockScreen = ({ role }) => {
   const { items, isLoading, error, refetch } = useItems();
@@ -35,10 +36,7 @@ const StockScreen = ({ role }) => {
       {error ? (
         <div className="flex items-center gap-3">
           <p className="text-accent-700 text-sm">{error.message}</p>
-          <button
-            onClick={refetch}
-            className="inline-flex items-center justify-center gap-1.5 font-heading font-extrabold text-sm rounded-md border border-divider px-3.5 py-2 cursor-pointer hover:bg-text/7 active:bg-text/14"
-          >
+          <button onClick={refetch} className={buttonVariants.secondary}>
             Retry
           </button>
         </div>
@@ -51,10 +49,7 @@ const StockScreen = ({ role }) => {
               {sorted.length} items in stock
             </p>
             {role === "admin" ? (
-              <Link
-                to="/add"
-                className="inline-flex items-center justify-center gap-1.5 font-heading font-extrabold text-sm rounded-md bg-accent text-bg px-3.5 py-2 hover:bg-accent-600 active:bg-accent-700"
-              >
+              <Link to="/add" className={buttonVariants.primary}>
                 Add Item
               </Link>
             ) : null}
