@@ -193,6 +193,10 @@ const ItemForm = () => {
     }
   }
 
+  function handleCancel() {
+    navigate("/");
+  }
+
   const photoPreviewUrl = photoFile
     ? URL.createObjectURL(photoFile)
     : item?.photo_path
@@ -370,9 +374,14 @@ const ItemForm = () => {
           ) : null}
         </div>
 
-        <button type="submit" className={buttonVariants.primary}>
-          Save
-        </button>
+        <div className="flex gap-2">
+          <button type="submit" className={buttonVariants.primary}>
+            Save
+          </button>
+          <button onClick={handleCancel} className={buttonVariants.secondary}>
+            Cancel
+          </button>
+        </div>
 
         {actionError ? (
           <p className="text-accent-700 text-sm mt-3">{actionError}</p>
