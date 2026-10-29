@@ -28,18 +28,19 @@ Do not:
 - **Reads go through `items_view`, never `items` directly.** The view masks `cost` to `NULL` for non-admin sessions via RLS-aware logic. Querying `items` directly for display would leak `cost` to sellers.
 - **Writes (insert/update/delete) go to `items` directly.** RLS policies on `items` already restrict writes to admin-role sessions.
 - **RLS is the real security boundary, not the UI.** Hiding a button is a UX nicety; the database policy is what actually enforces admin-vs-seller. Never assume UI-only restriction is sufficient.
-- **`profiles` table holds `id` (matches `auth.users.id`) and `role` (`admin` | `seller`).** Nothing else. Don't add fields to it without discussion.
+- **`profiles` table holds `id` (matches `auth.users.id`), `role` (`admin` | `seller`), and `display_name` (text, nullable — shown in the nav bar by `Screen.jsx`).** Don't add fields to it without discussion.
 - **Money fields are `numeric`, never treated as floats.**
 - **Nothing is hard-deleted.** "Delete" sets `items.status = 'deleted'`.
 - **`session` state lives in `App.jsx`**, populated via `supabase.auth.onAuthStateChange`. Don't build a separate/parallel auth-state mechanism.
+  - **Exception: `Screen.jsx` calls `supabase.auth.getSession()` itself** to fetch the display name, instead of receiving `session` as a prop from `App.jsx`. This is a deliberate choice, not a bug — it avoids threading `session` through every screen/route just for this one label. The trade-off: the display name loads a moment after the nav bar itself renders. Do not refactor this.
 - **The Supabase client is a single exported instance** from `src/lib/supabaseClient.js`. Never call `createClient()` anywhere else.
 
 ## Folder structure
 
 ```
 src/
-  components/   reusable pieces (Button, Card, Screen)
-  screens/      full pages (StockScreen, ItemDetail, AddItem, Login)
+  components/   reusable pieces (SearchBar, ItemCard, Screen)
+  screens/      full pages (StockScreen, SoldScreen, ItemDetail, ItemForm, Login)
   hooks/        useItems, etc.
   lib/          supabaseClient.js
   styles/       themes.js (Tailwind variant composition)
@@ -47,10 +48,10 @@ src/
 
 ## Reference docs in this repo
 
-- `documentation/vault-v1-requirements.md` — the actual spec, including the component plan (per-component responsibility/state/renders breakdown) as a section within the same file, not a separate document. Defer to this over assumptions; follow the component plan section, and flag if a task doesn't fit it cleanly rather than improvising structure.
+- `documentation/vault-v1-requirements.md` — the actual spec. Defer to this over assumptions, and flag if a task doesn't fit it cleanly rather than improvising structure.
+- `documentation/vault-v1-ComponentPlan.md` — the component plan (per-component responsibility/state/renders breakdown). A separate file from the requirements doc, not a section within it. Follow it for component structure.
 
 ## Current known gaps (do not "helpfully" solve these unprompted)
 
-- `Edit.jsx` vs. `AddItem.jsx` reuse — undecided, ask before building.
-- `ItemDetail`'s admin-check currently infers role from whether `cost` is present in the data. This is a known, deliberate shortcut — do not silently replace it with a "cleaner" role check without flagging it first.
-- Routing is not yet wired in this project.
+- Add vs. Edit is resolved: both are handled by the single `ItemForm.jsx` component, branching on whether an `item` prop/id is present. There is no separate `AddItem.jsx` or `Edit.jsx`.
+- `ItemDetail`'s actual admin-check (Edit/Delete visibility, "Sold by" visibility) uses the explicit `role` prop passed down from `App.jsx`. Separately, whether the `cost` field renders at all is driven by whether `item.cost` is non-null — a consequence of `items_view` already nulling it out for non-admins, not a stand-in for the role check.

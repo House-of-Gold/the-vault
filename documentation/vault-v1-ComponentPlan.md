@@ -26,6 +26,7 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 **Responsibility:** Shared shell for every logged-in page — logo, title, navigation, logout button. Absorbs the job originally proposed for a separate `AppScreen` — one component, not two.
 **Receives (props):** `title`, `children`.
 **Renders:** logo, header, nav with two real links — **"Stock"** (`<Link to="/">`) and **"Sold"** (`<Link to="/sold">`) — logout button, then `{children}`. Depends on React Router being wired into the project (see Routing in Open Questions below).
+**Display name:** Fetches the logged-in user's `display_name` from `profiles` itself. If it's null or the query fails, the name is simply omitted from the nav bar — not treated as an error.
 
 ---
 

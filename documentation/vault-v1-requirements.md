@@ -76,10 +76,11 @@ The schema is deliberately richer than the v1 UI. Adding columns to an empty tab
 
 ### `profiles` (new — needed to distinguish admin vs. seller)
 
-| Field  | Type | Notes                             |
-| ------ | ---- | --------------------------------- |
-| `id`   | uuid | Matches the Supabase Auth user id |
-| `role` | enum | `admin` \| `seller`               |
+| Field          | Type | Notes                                      |
+| -------------- | ---- | ------------------------------------------- |
+| `id`           | uuid | Matches the Supabase Auth user id           |
+| `role`         | enum | `admin` \| `seller`                         |
+| `display_name` | text | Nullable. Used for the name shown in the nav bar |
 
 RLS policies on `items` reference this table to decide what a given logged-in user may read or write — e.g., a policy checks the caller's `role` before allowing a `cost` column to be returned, or before allowing an insert/delete at all.
 
