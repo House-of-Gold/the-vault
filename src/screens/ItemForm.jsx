@@ -337,12 +337,12 @@ const ItemForm = () => {
         <div className="flex flex-col gap-1 mb-4">
           <label className="text-xs text-text/70">Photo</label>
           <div className="flex items-center gap-3">
-            <div className="w-24 h-24 aspect-square bg-neutral-200 border border-divider grid place-items-center overflow-hidden flex-none">
+            <div className="relative w-24 h-24 aspect-square bg-neutral-200 border border-divider grid place-items-center overflow-hidden flex-none">
               {photoPreviewUrl ? (
                 <img
                   src={photoPreviewUrl}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
                 <svg

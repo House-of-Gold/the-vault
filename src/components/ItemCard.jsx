@@ -19,7 +19,7 @@ const ItemCard = ({ item }) => {
           <img
             src={photoUrl}
             alt={item.name}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
           <svg
