@@ -378,7 +378,11 @@ const ItemForm = () => {
           <button type="submit" className={buttonVariants.primary}>
             Save
           </button>
-          <button onClick={handleCancel} className={buttonVariants.secondary}>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className={buttonVariants.secondary}
+          >
             Cancel
           </button>
         </div>
