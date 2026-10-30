@@ -4,6 +4,14 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 ---
 
+### main.jsx
+
+**Responsibility:** Mounts the App into the #root div, wrapped in StrictMode(in development it help avoiding bugs by running extra checks), and loads the global styles
+**Imports:** Strickmode, createRoot function, App.css, App.jsx
+**State:** n/a
+**Renders:** Entire App inside #root div.
+**Talks too:**
+
 ### Login.jsx — built
 
 **Responsibility:** Authenticate a user via Supabase Auth.
@@ -17,6 +25,7 @@ Ledjan's map for building v1, component by component. Update this as decisions c
 
 **Responsibility:** Own the session and role, decide Login vs. the logged-in app.
 **State:** `session` (via `onAuthStateChange` subscription, own `useEffect`), `role` (derived — second `useEffect`, dependency `[session]`, queries `profiles` for the current user's role via `.eq("id", session.user.id).single()`; `null` when logged out or on error, fail-safe not fail-open).
+the effect runs once per page load and subscribes, and the callback runs on every auth change and stores the session
 **Renders:** `<Login />` if `session` is `null`. Otherwise, the routed app — `role` passed to each route's element as a prop (e.g. `<Route path="/item/:id" element={<ItemDetail role={role} />} />`), since routed pages aren't direct children of `App.jsx` and can't receive props any other way.
 
 ---
