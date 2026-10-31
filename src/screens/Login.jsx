@@ -17,8 +17,10 @@ const Login = () => {
   async function handleSubmit(e) {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
+      //email: email
+      email,
+      //password: passoword
+      password,
     });
     error ? setLocalError(error) : null;
   }
