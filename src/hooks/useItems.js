@@ -8,6 +8,7 @@ const useItems = () => {
 
   async function fetchItems() {
     setIsLoading(true);
+    setError(null);
     const { data, error } = await supabase.from("items_view").select("*");
 
     if (error) {
