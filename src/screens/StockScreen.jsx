@@ -36,7 +36,7 @@ const StockScreen = ({ role }) => {
       {error ? (
         <div className="flex items-center gap-3">
           <p className="text-accent-700 text-sm">{error.message}</p>
-          <button onClick={refetch} className={buttonVariants.secondary}>
+          <button onClick={refetch} className={buttonVariants.primary}>
             Retry
           </button>
         </div>
