@@ -4,11 +4,17 @@ import Screen from "../components/Screen";
 import useItems from "../hooks/useItems";
 import { supabase } from "../lib/supabaseClient";
 
+//helper
+function toNumericSoldPrice(value) {
+  return Number(String(value).replace(",", "."));
+}
+
 const ItemDetail = ({ role }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { items, isLoading, error, refetch } = useItems();
   const [confirmingSale, setConfirmingSale] = useState(false);
+  const [confirmingBelowCost, setConfirmingBelowCost] = useState(false);
   const [actionError, setActionError] = useState(null);
   const [soldPrice, setSoldPrice] = useState(null);
 
@@ -26,7 +32,7 @@ const ItemDetail = ({ role }) => {
     if (!/^\d+([.,]\d{1,2})?$/.test(soldPrice)) {
       return "Enter the price without thousands separators, e.g. 1500 or 1500,50";
     }
-    if (Number(String(soldPrice).replace(",", ".")) <= 0) {
+    if (toNumericSoldPrice(soldPrice) <= 0) {
       return "Sold price must be a number greater than 0";
     }
     return null;
@@ -39,12 +45,24 @@ const ItemDetail = ({ role }) => {
       return;
     }
 
+    const numericSoldPrice = toNumericSoldPrice(soldPrice);
+
+    if (
+      // Supabase never discloses Cost to non-admin role
+      item.cost != null &&
+      numericSoldPrice < Number(item.cost) &&
+      !confirmingBelowCost
+    ) {
+      setConfirmingBelowCost(true);
+      return;
+    }
+
     const { error } = await supabase
       .from("items")
       .update({
         status: "sold",
         sold_at: new Date().toISOString(),
-        sold_price: Number(String(soldPrice).replace(",", ".")),
+        sold_price: numericSoldPrice,
       })
       .eq("id", item.id);
 
@@ -53,6 +71,7 @@ const ItemDetail = ({ role }) => {
     } else {
       setActionError(null);
       setConfirmingSale(false);
+      setConfirmingBelowCost(false);
       refetch();
     }
   }
@@ -91,6 +110,7 @@ const ItemDetail = ({ role }) => {
   function getSoldPrice(e) {
     setSoldPrice(e.target.value);
     setActionError(null);
+    setConfirmingBelowCost(false);
   }
 
   function copyPriceToSoldPrice() {
@@ -260,12 +280,18 @@ const ItemDetail = ({ role }) => {
                 </div>
               ) : null}
 
+              {confirmingBelowCost ? (
+                <p className="text-accent-700 text-sm mb-3">
+                  Sold price is below cost ({item.cost} {item.currency}). Click
+                  "Confirm sold?" again to proceed.
+                </p>
+              ) : null}
+
               {actionError ? (
                 <p className="text-accent-700 text-sm mb-3">
                   {actionError.message}
                 </p>
               ) : null}
-              {/* What error message are we requesting here */}
 
               <div className="flex flex-wrap gap-2">
                 {item.status === "in_stock" ? (
@@ -280,6 +306,7 @@ const ItemDetail = ({ role }) => {
                       <button
                         onClick={() => {
                           setConfirmingSale(false);
+                          setConfirmingBelowCost(false);
                           setActionError(null);
                         }}
                         className="inline-flex items-center justify-center gap-1.5 font-heading font-extrabold text-sm rounded-md border border-divider px-3.5 py-2 cursor-pointer hover:bg-text/7 active:bg-text/14"
@@ -291,6 +318,7 @@ const ItemDetail = ({ role }) => {
                     <button
                       onClick={() => {
                         setConfirmingSale(true);
+                        setConfirmingBelowCost(false);
                         copyPriceToSoldPrice();
                         setActionError(null);
                       }}
