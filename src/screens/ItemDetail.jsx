@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import Screen from "../components/Screen";
 import useItems from "../hooks/useItems";
+import useDiscount from "../hooks/useDiscount";
 import { supabase } from "../lib/supabaseClient";
 
 //helper
@@ -13,12 +14,18 @@ const ItemDetail = ({ role }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { items, isLoading, error, refetch } = useItems();
+  const { discountPercent } = useDiscount();
   const [confirmingSale, setConfirmingSale] = useState(false);
   const [confirmingBelowCost, setConfirmingBelowCost] = useState(false);
   const [actionError, setActionError] = useState(null);
   const [soldPrice, setSoldPrice] = useState(null);
 
   const item = items.find((item) => item.id === id);
+  //Approved discount
+  const lowestPrice =
+    item && discountPercent != null
+      ? Math.round(Number(item.price) * (1 - discountPercent / 100) * 100) / 100
+      : null;
 
   const photoUrl = item?.photo_path
     ? supabase.storage.from("item-photos").getPublicUrl(item.photo_path).data
@@ -67,7 +74,14 @@ const ItemDetail = ({ role }) => {
       .eq("id", item.id);
 
     if (error) {
-      setActionError(error);
+      if (error.code === "VD001") {
+        setActionError({
+          message:
+            "You can't go below the maximum discount allowed, contact Admin",
+        });
+      } else {
+        setActionError(error);
+      }
     } else {
       setActionError(null);
       setConfirmingSale(false);
@@ -277,6 +291,12 @@ const ItemDetail = ({ role }) => {
                     onChange={getSoldPrice}
                     className="w-full min-h-9 px-2.5 py-1.5 text-sm text-text bg-bg border border-divider rounded-md caret-accent hover:border-text/45 focus-visible:border-accent focus-visible:outline-none"
                   />
+                  {role === "seller" && lowestPrice != null ? (
+                    <p className="text-text/55 text-xs">
+                      Max discount: {discountPercent}% · Lowest price:{" "}
+                      {lowestPrice} {item.currency}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
 
