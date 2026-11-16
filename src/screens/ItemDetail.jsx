@@ -19,19 +19,39 @@ const ItemDetail = ({ role }) => {
         .publicUrl
     : null;
 
+  function validate() {
+    if (!soldPrice) {
+      return "Sold price is required";
+    }
+    if (!/^\d+([.,]\d{1,2})?$/.test(soldPrice)) {
+      return "Enter the price without thousands separators, e.g. 1500 or 1500,50";
+    }
+    if (Number(String(soldPrice).replace(",", ".")) <= 0) {
+      return "Sold price must be a number greater than 0";
+    }
+    return null;
+  }
+
   async function handleMarkSold() {
+    const validationError = validate();
+    if (validationError) {
+      setActionError({ message: validationError });
+      return;
+    }
+
     const { error } = await supabase
       .from("items")
       .update({
         status: "sold",
         sold_at: new Date().toISOString(),
-        sold_price: soldPrice,
+        sold_price: Number(String(soldPrice).replace(",", ".")),
       })
       .eq("id", item.id);
 
     if (error) {
       setActionError(error);
     } else {
+      setActionError(null);
       setConfirmingSale(false);
       refetch();
     }
@@ -70,6 +90,11 @@ const ItemDetail = ({ role }) => {
 
   function getSoldPrice(e) {
     setSoldPrice(e.target.value);
+    setActionError(null);
+  }
+
+  function copyPriceToSoldPrice() {
+    setSoldPrice(item.price);
   }
 
   return (
@@ -228,7 +253,7 @@ const ItemDetail = ({ role }) => {
                   <input
                     type="text"
                     name="sold_price"
-                    defaultValue={item.price}
+                    value={soldPrice}
                     onChange={getSoldPrice}
                     className="w-full min-h-9 px-2.5 py-1.5 text-sm text-text bg-bg border border-divider rounded-md caret-accent hover:border-text/45 focus-visible:border-accent focus-visible:outline-none"
                   />
@@ -253,7 +278,10 @@ const ItemDetail = ({ role }) => {
                         Confirm sold?
                       </button>
                       <button
-                        onClick={() => setConfirmingSale(false)}
+                        onClick={() => {
+                          setConfirmingSale(false);
+                          setActionError(null);
+                        }}
                         className="inline-flex items-center justify-center gap-1.5 font-heading font-extrabold text-sm rounded-md border border-divider px-3.5 py-2 cursor-pointer hover:bg-text/7 active:bg-text/14"
                       >
                         Cancel
@@ -261,7 +289,11 @@ const ItemDetail = ({ role }) => {
                     </>
                   ) : (
                     <button
-                      onClick={() => setConfirmingSale(true)}
+                      onClick={() => {
+                        setConfirmingSale(true);
+                        copyPriceToSoldPrice();
+                        setActionError(null);
+                      }}
                       className="inline-flex items-center justify-center gap-1.5 font-heading font-extrabold text-sm rounded-md bg-accent text-bg px-3.5 py-2 hover:bg-accent-600 active:bg-accent-700"
                     >
                       Mark as Sold
