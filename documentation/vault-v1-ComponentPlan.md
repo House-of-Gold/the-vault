@@ -63,8 +63,17 @@ the effect runs once per page load and subscribes, and the callback runs on ever
 **Status:** Core complete and verified understood — fetch, photo URL construction (and its two distinct failure modes), Mark as Sold + confirmation with stale-UI timing handled, Undo Sale, role-gated UI (`role === "admin"` for Edit/Delete visibility).
 **Still to build:**
 
-- Admin-specific `sold_price` input in the Mark as Sold confirmation step (pre-filled with `price`, editable) — seller's version stays exactly as-is, unchanged
-- Edit and Delete buttons exist but have no handlers yet
+- ✅ 16 Nov 2026: `sold_price` input for both roles (controlled, pre-filled with `price`), validation in `validate()` with the `toNumericSoldPrice()` helper, and the admin below-cost warning (`confirmingBelowCost` flag: first tap warns, second tap saves)
+- Seller discount limit (in progress): read `seller_max_discount_percent` with the new `useDiscount` hook, show "Max discount / Lowest price" to sellers, and map the database error `VD001` to a friendly message
+- ✅ Edit (navigates to the form with the item in router state) and Delete (soft delete, then back to Stock) are wired
+
+---
+
+### useDiscount.js — planned (16 Nov 2026)
+
+**Responsibility:** Fetch the sellers' maximum discount percentage from `app_settings` (key `seller_max_discount_percent`) so any component can use it.
+**Returns:** the percentage as a number, plus `isLoading` and `error`, same shape as `useItems` (exact names decided when built).
+**Rules:** reset loading and error at the start of each fetch; convert the value with `Number()`; if the fetch fails the screen just hides the "lowest price" line, because the database is the real guard.
 
 ---
 
@@ -92,5 +101,5 @@ the effect runs once per page load and subscribes, and the callback runs on ever
 ### Open questions to resolve before/while building
 
 - **Routing** — `/`, `/sold`, `/item/:id` are wired. Still missing: `/add`, `/item/:id/edit` (both waiting on ItemForm.jsx's branching logic), `*` for 404.
-- **Mark as Sold confirmation** — built for the seller flow (two-step button). Admin flow still needs the `sold_price` input added to its confirmation step.
+- **Mark as Sold confirmation** — built for both roles with a validated `sold_price` input; admin below-cost warning built; seller discount display and `VD001` message in progress (see `useDiscount.js`).
 - **Delete** — button exists on `ItemDetail`, no handler yet. Given the soft-delete design (`status = 'deleted'`, never a real row removal), this should be a small, focused addition once `ItemForm.jsx`'s edit branch is done.

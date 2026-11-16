@@ -145,3 +145,42 @@ This restores direct reads, including `cost`. The old policy definitions were th
 - **Route guards:** `/add` and `/edit/:id` have no role check in `App.jsx`. A seller who types the URL sees the form, but the database refuses the save.
 - **`anon` permissions:** the `anon` role holds `TRUNCATE`, `TRIGGER` and `REFERENCES` on `items`. It has no read or write access, and the API does not expose `TRUNCATE`, so this is low risk, but it is worth cleaning up before real data goes in.
 - **Schema not in the repo:** these policies, grants, the trigger and the view live only in Supabase. This file is the record.
+
+---
+
+## 9. Seller discount limit (added 16 November 2026)
+
+**Rule:** a seller cannot mark an item as sold for less than `price × (1 − percent / 100)`, where the percent is stored in the database. The admin is never limited.
+
+### 9.1 What was added
+
+- **Table `public.app_settings`** (`key text primary key`, `value numeric not null`). One row for now: `seller_max_discount_percent = 10`. A check constraint keeps this setting between 0 and 100.
+- **Permissions:** all logged-in users can `SELECT` (the screen needs the number to show the lowest allowed price). Only the admin can `UPDATE`, and only the `value` column. There are no INSERT or DELETE policies, so rows are added or removed only from the Supabase dashboard. `anon` has no access.
+- **Trigger `set_updated_at()`** now also checks sales by sellers: when a seller changes `status` from not-sold to sold, the effective sold price (`sold_price`, or `price` if empty) must be at least `round(price × (1 − percent/100), 2)`.
+
+### 9.2 Errors the app should recognize
+
+| Code | Message | Meaning |
+|---|---|---|
+| `VD001` | Sold price is below the maximum discount allowed | Seller price under the limit. Show: "You can't go below the maximum discount allowed, contact Admin". |
+| `VD002` | Seller discount limit is not configured | The setting row is missing. The sale is refused on purpose (fails closed). Restore the row. |
+
+### 9.3 How to change the percentage
+
+Supabase dashboard → Table Editor → `app_settings` → edit the `value` of `seller_max_discount_percent`. It takes effect immediately for new sales. Past sales are never re-checked.
+
+### 9.4 Verified on 16 Nov 2026 (all inside transactions that were rolled back)
+
+| Test | Result |
+|---|---|
+| Seller sells HOG-9005 (price 210) at 188.99 | refused, `VD001` |
+| Seller sells at 189.00 (exactly 10% off) | allowed |
+| Admin sells at 100 | allowed |
+| Seller tries to change the setting to 90 | no rows updated, value stays 10 |
+
+### 9.5 Notes
+
+- The lowest price is rounded to 2 decimals. The screen must use the same rounding. JavaScript and Postgres can differ by a cent in rare cases, so the screen's check is a convenience and the database refusal must still be handled.
+- The rule only runs on the sale transition. A seller cannot edit `sold_price` of an already sold item, because the update policies only allow in_stock → sold and sold → in_stock.
+- Undo (only if something breaks): restore the previous `set_updated_at()` without the discount block, then optionally `drop table public.app_settings;`.
+- The protected-column guard (a seller trying to change `price`, `cost`, etc. through the API) is still not tested.
