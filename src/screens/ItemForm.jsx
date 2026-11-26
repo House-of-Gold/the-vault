@@ -102,6 +102,10 @@ const ItemForm = () => {
       }
     }
 
+    if (!category) {
+      newErrors.category = "Category is required";
+    }
+
     if (!price) {
       newErrors.price = "Price is required";
     } else if (isNaN(price) || Number(price) <= 0) {
@@ -248,6 +252,9 @@ const ItemForm = () => {
                 </option>
               ))}
             </select>
+            {errors.category ? (
+              <p className="text-accent-700 text-xs">{errors.category}</p>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-1">
