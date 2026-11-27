@@ -20,10 +20,12 @@ const StockScreen = ({ role }) => {
     );
   });
 
-  //Order Items on the list by the last acquired
-  const sorted = [...filtered].sort(
-    (a, b) => new Date(b.acquired_at) - new Date(a.acquired_at),
-  );
+  //Order Items on the list by the last acquired, newest created_at first on ties
+  const sorted = [...filtered].sort((a, b) => {
+    const acquiredDiff = new Date(b.acquired_at) - new Date(a.acquired_at);
+    if (acquiredDiff !== 0) return acquiredDiff;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
 
   return (
     <Screen title="Stock">
