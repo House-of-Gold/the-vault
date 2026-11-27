@@ -43,6 +43,9 @@ const ItemDetail = ({ role }) => {
     if (toNumericSoldPrice(soldPrice) <= 0) {
       return "Sold price must be a number greater than 0";
     }
+    if (toNumericSoldPrice(soldPrice) > Number(item.price)) {
+      return "Sold price can't be higher than the listed price";
+    }
     return null;
   }
 
@@ -79,6 +82,10 @@ const ItemDetail = ({ role }) => {
         setActionError({
           message:
             "You can't go below the maximum discount allowed, contact Admin",
+        });
+      } else if (error.code === "VD003") {
+        setActionError({
+          message: "Sold price can't be higher than the listed price",
         });
       } else {
         setActionError(error);
