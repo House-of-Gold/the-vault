@@ -51,9 +51,7 @@ const ItemCard = ({ item }) => {
 
       <div className="p-3 flex flex-col gap-1">
         <div className="flex justify-between items-baseline gap-2">
-          <span className="text-xs text-accent tabular-nums">
-            {item.code}
-          </span>
+          <span className="text-xs text-accent tabular-nums">{item.code}</span>
           <span className="text-xs uppercase tracking-wide text-text/55">
             {item.category}
           </span>
@@ -61,9 +59,23 @@ const ItemCard = ({ item }) => {
         <p className="font-heading font-extrabold text-base leading-tight group-hover:text-accent">
           {item.name}
         </p>
-        <p className="tabular-nums text-base mt-0.5">
-          {item.price} {item.currency}
-        </p>
+
+        {!isSold ? (
+          <p className="tabular-nums text-base mt-0.5">
+            Price {item.price} {item.currency}
+          </p>
+        ) : (
+          <div>
+            {Number(item.sold_price) !== Number(item.price) ? (
+              <p className="tabular-nums text-base mt-0.5 line-through text-accent">
+                Price {item.price} {item.currency}
+              </p>
+            ) : null}
+            <p className="tabular-nums text-base mt-0.5">
+              Sold for {item.sold_price} {item.currency}
+            </p>
+          </div>
+        )}
       </div>
     </Link>
   );
