@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, useParams } from "react-router";
 import imageCompression from "browser-image-compression";
 import Screen from "../components/Screen";
 import { supabase } from "../lib/supabaseClient";
@@ -22,7 +22,15 @@ function todayDate() {
 const ItemForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams();
   const item = location.state?.item;
+
+  useEffect(() => {
+    if (id && !item) {
+      navigate(`/item/${id}`, { replace: true });
+    }
+  }, [id, item, navigate]);
+
   const [name, setName] = useState(item?.name || "");
   const [code, setCode] = useState(item?.code?.replace("HOG-", "") || "");
   const [price, setPrice] = useState(item?.price || "");
@@ -207,6 +215,10 @@ const ItemForm = () => {
       ? supabase.storage.from("item-photos").getPublicUrl(item.photo_path).data
           .publicUrl
       : null;
+
+  if (id && !item) {
+    return null;
+  }
 
   return (
     <Screen title={item?.id ? "Edit Item" : "Add Item"}>
