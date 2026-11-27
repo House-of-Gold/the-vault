@@ -104,9 +104,8 @@ const ItemForm = () => {
     if (!code.trim()) {
       newErrors.code = "Code is required";
     } else {
-      const digits = code.trim();
-      if (digits.length !== 4 || isNaN(digits)) {
-        newErrors.code = "Code must be 4 numbers";
+      if (!/^\d{4}$/.test(code.trim())) {
+        newErrors.code = "Code must be exactly 4 digits";
       }
     }
 
@@ -243,6 +242,7 @@ const ItemForm = () => {
               type="text"
               value={code}
               onChange={storeCode}
+              placeholder="4 digits only"
               className={inputClass}
             />
             {errors.code ? (
@@ -275,6 +275,7 @@ const ItemForm = () => {
               type="number"
               value={price}
               onChange={storePrice}
+              placeholder="e.g. 1500 or 1500.50"
               className={inputClass}
             />
             {errors.price ? (
@@ -304,6 +305,7 @@ const ItemForm = () => {
               type="number"
               value={cost}
               onChange={storeCost}
+              placeholder="e.g. 1500 or 1500.50"
               className={inputClass}
             />
             {errors.cost ? (
