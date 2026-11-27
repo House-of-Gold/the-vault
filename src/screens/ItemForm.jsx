@@ -192,9 +192,17 @@ const ItemForm = () => {
         if (error.code === "23505") {
           setActionError("This code is already in use");
         } else if (error.code === "23514") {
-          setActionError("Please, select expositor 1-9");
+          if (error.message.includes("expositor_range")) {
+            setActionError("Please, select expositor 1-9");
+          } else if (error.message.includes("category_not_empty")) {
+            setActionError("Category is required");
+          } else {
+            setActionError("Something went wrong, please try again");
+          }
+        } else if (error.code === "42501") {
+          setActionError("You're not authorized to do this");
         } else {
-          setActionError("Network error");
+          setActionError("Something went wrong, please try again");
         }
       } else if (item?.id) {
         navigate(`/item/${item.id}`);
